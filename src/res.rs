@@ -103,3 +103,61 @@ impl ErrorObject {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde::Deserialize;
+
+    #[test]
+    fn serialize_response() {
+        #[derive(Deserialize, PartialEq, Eq, Debug)]
+        struct Expected {
+            jsonrpc: String,
+            result: String,
+            id: usize,
+        }
+
+        let res = Response::new(Some(42), "The answer");
+        let res_str = serde_json::to_string(&res).unwrap();
+        let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
+
+        let expected = Expected {
+            jsonrpc: "2.0".to_string(),
+            result: "The answer".to_string(),
+            id: 42,
+        };
+
+        assert_eq!(deserialized, expected);
+    }
+
+    #[test]
+    fn serialize_err_response() {
+        #[derive(Deserialize, PartialEq, Eq, Debug)]
+        struct Expected {
+            jsonrpc: String,
+            error: ExpectedError,
+            id: usize,
+        }
+        #[derive(Deserialize, PartialEq, Eq, Debug)]
+        struct ExpectedError {
+            code: isize,
+            message: String,
+        }
+
+        let res = Response::new_err(Some(42), ErrorObject::INVALID_PARAMS);
+        let res_str = serde_json::to_string(&res).unwrap();
+        let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
+
+        let expected = Expected {
+            jsonrpc: "2.0".to_string(),
+            error: ExpectedError {
+                code: -32602,
+                message: "Invalid params".to_string(),
+            },
+            id: 42,
+        };
+
+        assert_eq!(deserialized, expected);
+    }
+}
