@@ -1,27 +1,8 @@
+use crate::req::Version;
 use hyper::{Body, Response as HyperResponse};
-use serde::{Deserialize, Serialize};
-use serde_json::{map::Map, Value};
+use serde::Serialize;
+use serde_json::Value;
 use std::borrow::Cow;
-
-#[derive(Debug, Deserialize)]
-pub struct Request {
-    jsonrpc: Version,
-    id: Option<u64>,
-    method: String,
-    params: Option<Params>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-enum Version {
-    #[serde(rename = "2.0")]
-    V2,
-}
-
-#[derive(Debug, Deserialize)]
-pub enum Params {
-    ByPosition(Vec<Value>),
-    ByName(Map<String, Value>),
-}
 
 /*
  * ========

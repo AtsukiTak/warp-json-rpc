@@ -1,4 +1,5 @@
-pub mod request;
+pub mod req;
+pub mod res;
 
 #[cfg(test)]
 mod tests {
