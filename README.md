@@ -1,7 +1,5 @@
-rust-ddd-json-rpc
-
 ## Goals
 
 - [ ] Follow JSON-RPC 2.0 Specification
-- [ ] Support async/await
+- [ ] Well typed
 - [ ] Perform common tasks easily
