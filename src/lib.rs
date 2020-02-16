@@ -1,10 +1,7 @@
+pub mod method;
 pub mod req;
 pub mod res;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+pub use method::Method;
+pub use req::Request;
+pub use res::Response;

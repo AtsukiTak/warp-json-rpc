@@ -26,7 +26,7 @@ impl Response {
         }
     }
 
-    pub fn new_err(id: Option<u64>, error: ErrorObject) -> Response {
+    pub fn new_err(id: Option<u64>, error: Error) -> Response {
         Response {
             jsonrpc: Version::V2,
             id,
@@ -51,52 +51,52 @@ pub enum ResponseContent {
     #[serde(rename = "result")]
     Success(Value),
     #[serde(rename = "error")]
-    Error(ErrorObject),
+    Error(Error),
 }
 
 #[derive(Debug, Serialize)]
-pub struct ErrorObject {
+pub struct Error {
     pub code: i64,
     pub message: Cow<'static, str>,
     pub data: Option<Value>,
 }
 
-impl ErrorObject {
-    pub const PARSE_ERROR: ErrorObject = ErrorObject {
+impl Error {
+    pub const PARSE_ERROR: Error = Error {
         code: -32700,
         message: Cow::Borrowed("Parse error"),
         data: None,
     };
 
-    pub const INVALID_REQUEST: ErrorObject = ErrorObject {
+    pub const INVALID_REQUEST: Error = Error {
         code: -32600,
         message: Cow::Borrowed("Invalid Request"),
         data: None,
     };
 
-    pub const METHOD_NOT_FOUND: ErrorObject = ErrorObject {
+    pub const METHOD_NOT_FOUND: Error = Error {
         code: -32601,
         message: Cow::Borrowed("Method not found"),
         data: None,
     };
 
-    pub const INVALID_PARAMS: ErrorObject = ErrorObject {
+    pub const INVALID_PARAMS: Error = Error {
         code: -32602,
         message: Cow::Borrowed("Invalid params"),
         data: None,
     };
 
-    pub const INTERNAL_ERROR: ErrorObject = ErrorObject {
+    pub const INTERNAL_ERROR: Error = Error {
         code: -32603,
         message: Cow::Borrowed("Internal error"),
         data: None,
     };
 
-    pub fn custom<S>(code: i64, message: S, data: Option<impl Serialize>) -> ErrorObject
+    pub fn custom<S>(code: i64, message: S, data: Option<impl Serialize>) -> Error
     where
         Cow<'static, str>: From<S>,
     {
-        ErrorObject {
+        Error {
             code,
             message: message.into(),
             data: data.map(|s| serde_json::to_value(s).unwrap()),
@@ -145,7 +145,7 @@ mod test {
             message: String,
         }
 
-        let res = Response::new_err(Some(42), ErrorObject::INVALID_PARAMS);
+        let res = Response::new_err(Some(42), Error::INVALID_PARAMS);
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 

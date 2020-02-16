@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{map::Map, Value};
+use warp::Filter as _;
 
 /*
  * =======
@@ -26,6 +27,26 @@ pub enum Params {
     ByPosition(Vec<Value>),
     ByName(Map<String, Value>),
 }
+
+impl Into<Value> for Params {
+    fn into(self) -> Value {
+        match self {
+            Params::ByPosition(inner) => Value::Array(inner),
+            Params::ByName(inner) => Value::Object(inner),
+        }
+    }
+}
+
+/*
+pub fn request() -> impl warp::Filter<Extract = (Request,), Error = Rejection> {
+    warp::filters::method::post()
+        .and(warp::filters::header::exact(
+            "Content-Type",
+            "application/json",
+        ))
+        .and(warp::filters::body::json::<Request>())
+}
+*/
 
 #[cfg(test)]
 mod test {
