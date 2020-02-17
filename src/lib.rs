@@ -1,3 +1,4 @@
+pub mod filter;
 pub mod method;
 pub mod req;
 pub mod res;

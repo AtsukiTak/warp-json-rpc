@@ -41,9 +41,9 @@ impl ServerBuilder {
 
     pub fn register<F, M, P>(&mut self, name: &'static str, method: F) -> &mut Self
     where
-        F: MethodFactory<M> + 'static,
-        M: Method<P> + 'static,
-        P: DeserializeOwned,
+        F: MethodFactory<M> + 'static + Send + Sync,
+        M: Method<P> + 'static + Send + Sync,
+        P: DeserializeOwned + 'static + Send + Sync,
     {
         self.methods
             .insert(name, method_factory_to_handler_factory(method));
@@ -57,14 +57,15 @@ impl ServerBuilder {
     }
 }
 
-type RequestHandler = Box<dyn FnOnce(Request) -> Pin<Box<dyn Future<Output = Response>>>>;
-type RequestHandlerFactory = Box<dyn Fn() -> RequestHandler>;
+type ResponseFut = Pin<Box<dyn Future<Output = Response> + Send + Sync>>;
+type RequestHandler = Box<dyn FnOnce(Request) -> ResponseFut + Send + Sync>;
+type RequestHandlerFactory = Box<dyn Fn() -> RequestHandler + Send + Sync>;
 
 /// `Method` を Request -> Response のクロージャにラップする
 fn method_to_handler<M, P>(method: M) -> RequestHandler
 where
-    M: Method<P> + 'static,
-    P: DeserializeOwned,
+    M: Method<P> + 'static + Send + Sync,
+    P: DeserializeOwned + 'static + Send + Sync,
 {
     // Request handler の本体
     async fn inner<M, P>(method: M, req: Request) -> Result<Response, Response>
@@ -99,9 +100,9 @@ where
 
 fn method_factory_to_handler_factory<F, M, P>(factory: F) -> RequestHandlerFactory
 where
-    F: MethodFactory<M> + 'static,
-    M: Method<P> + 'static,
-    P: DeserializeOwned,
+    F: MethodFactory<M> + 'static + Send + Sync,
+    M: Method<P> + 'static + Send + Sync,
+    P: DeserializeOwned + 'static + Send + Sync,
 {
     Box::new(move || method_to_handler(factory.create()))
 }

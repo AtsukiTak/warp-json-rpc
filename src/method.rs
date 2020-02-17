@@ -6,7 +6,7 @@ use std::{future::Future, marker::PhantomData};
 /// you SHOULD set `Params = ()`;
 pub trait Method<Params: DeserializeOwned> {
     type Response: Serialize;
-    type ResponseFut: Future<Output = Result<Self::Response, Error>>;
+    type ResponseFut: Future<Output = Result<Self::Response, Error>> + Send + Sync;
 
     fn call(self, params: Params) -> Self::ResponseFut;
 }
@@ -40,10 +40,10 @@ pub fn array_method_fn<F>(f: F) -> MethodFn<F, ArrayType> {
 
 impl<F, P, S, R> Method<P> for MethodFn<F, MapType>
 where
-    F: FnOnce(P) -> S,
-    P: DeserializeOwned,
-    S: Future<Output = Result<R, Error>>,
-    R: Serialize,
+    F: FnOnce(P) -> S + 'static + Send + Sync,
+    P: DeserializeOwned + 'static + Send + Sync,
+    S: Future<Output = Result<R, Error>> + 'static + Send + Sync,
+    R: Serialize + 'static + Send + Sync,
 {
     type Response = R;
     type ResponseFut = S;
@@ -55,9 +55,9 @@ where
 
 impl<F, S, R> Method<()> for MethodFn<F, ArrayType>
 where
-    F: FnOnce() -> S,
-    S: Future<Output = Result<R, Error>>,
-    R: Serialize,
+    F: FnOnce() -> S + 'static + Send + Sync,
+    S: Future<Output = Result<R, Error>> + 'static + Send + Sync,
+    R: Serialize + 'static + Send + Sync,
 {
     type Response = R;
     type ResponseFut = S;
@@ -71,10 +71,10 @@ macro_rules! array_method_fns {
     ($t:ident) => {
         impl<F, $t, S, R> Method<($t,)> for MethodFn<F, ArrayType>
         where
-            F: FnOnce($t) -> S,
-            $t: DeserializeOwned,
-            S: Future<Output = Result<R, Error>>,
-            R: Serialize,
+            F: FnOnce($t) -> S + 'static + Send + Sync,
+            $t: DeserializeOwned + 'static + Send + Sync,
+            S: Future<Output = Result<R, Error>> + 'static + Send + Sync,
+            R: Serialize + 'static + Send + Sync,
         {
             type Response = R;
             type ResponseFut = S;
@@ -90,11 +90,11 @@ macro_rules! array_method_fns {
 
         impl<F, $t1, $( $t ),*, S, R> Method<($t1, $( $t ),*)> for MethodFn<F, ArrayType>
         where
-            F: FnOnce($t1, $( $t ),*) -> S,
-            $t1: DeserializeOwned,
-            $( $t: DeserializeOwned, )*
-            S: Future<Output = Result<R, Error>>,
-            R: Serialize,
+            F: FnOnce($t1, $( $t ),*) -> S + 'static + Send + Sync,
+            $t1: DeserializeOwned + 'static + Send + Sync,
+            $( $t: DeserializeOwned + 'static + Send + Sync, )*
+            S: Future<Output = Result<R, Error>> + 'static + Send + Sync,
+            R: Serialize + 'static + Send + Sync,
         {
             type Response = R;
             type ResponseFut = S;

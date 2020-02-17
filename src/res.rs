@@ -1,5 +1,5 @@
 use crate::req::Version;
-use hyper::{Body, Response as HyperResponse};
+use hyper::Body;
 use serde::Serialize;
 use serde_json::Value;
 use std::borrow::Cow;
@@ -35,10 +35,12 @@ impl Response {
     }
 }
 
-impl<'a> Into<HyperResponse<Body>> for &'a Response {
-    fn into(self) -> HyperResponse<Body> {
+pub type HyperResponse = hyper::Response<Body>;
+
+impl<'a> Into<HyperResponse> for &'a Response {
+    fn into(self) -> HyperResponse {
         let body = Body::from(serde_json::to_vec(self).unwrap());
-        HyperResponse::builder()
+        hyper::Response::builder()
             .status(200)
             .header("Content-Type", "application/json")
             .body(body)
