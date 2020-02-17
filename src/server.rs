@@ -27,10 +27,20 @@ impl Server {
         self.methods
             .insert(name, method_factory_to_handler_factory(method));
     }
+
+    pub async fn handle_request(&self, req: Request) -> Response {
+        match self.methods.get(req.method.as_str()) {
+            None => Response::new_err(req.id, Error::METHOD_NOT_FOUND),
+            Some(factory) => {
+                let handler = factory();
+                handler(req).await
+            }
+        }
+    }
 }
 
 type RequestHandler = Box<dyn FnOnce(Request) -> Pin<Box<dyn Future<Output = Response>>>>;
-type RequestHandlerFactory = Box<dyn FnOnce() -> RequestHandler>;
+type RequestHandlerFactory = Box<dyn Fn() -> RequestHandler>;
 
 /// `Method` を Request -> Response のクロージャにラップする
 fn method_to_handler<M, P>(method: M) -> RequestHandler
