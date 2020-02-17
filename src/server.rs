@@ -5,27 +5,16 @@ use crate::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::{collections::HashMap, future::Future, pin::Pin};
+use std::{collections::HashMap, future::Future, pin::Pin, sync::Arc};
 
+#[derive(Clone)]
 pub struct Server {
-    methods: HashMap<&'static str, RequestHandlerFactory>,
+    methods: Arc<HashMap<&'static str, RequestHandlerFactory>>,
 }
 
 impl Server {
-    pub fn new() -> Server {
-        Server {
-            methods: HashMap::new(),
-        }
-    }
-
-    pub fn register<F, M, P>(&mut self, name: &'static str, method: F)
-    where
-        F: MethodFactory<M> + 'static,
-        M: Method<P> + 'static,
-        P: DeserializeOwned,
-    {
-        self.methods
-            .insert(name, method_factory_to_handler_factory(method));
+    pub fn builder() -> ServerBuilder {
+        ServerBuilder::new()
     }
 
     pub async fn handle_request(&self, req: Request) -> Response {
@@ -35,6 +24,35 @@ impl Server {
                 let handler = factory();
                 handler(req).await
             }
+        }
+    }
+}
+
+pub struct ServerBuilder {
+    methods: HashMap<&'static str, RequestHandlerFactory>,
+}
+
+impl ServerBuilder {
+    pub fn new() -> ServerBuilder {
+        ServerBuilder {
+            methods: HashMap::new(),
+        }
+    }
+
+    pub fn register<F, M, P>(&mut self, name: &'static str, method: F) -> &mut Self
+    where
+        F: MethodFactory<M> + 'static,
+        M: Method<P> + 'static,
+        P: DeserializeOwned,
+    {
+        self.methods
+            .insert(name, method_factory_to_handler_factory(method));
+        self
+    }
+
+    pub fn build(self) -> Server {
+        Server {
+            methods: Arc::new(self.methods),
         }
     }
 }
