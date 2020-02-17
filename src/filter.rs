@@ -1,7 +1,9 @@
 use crate::{res::HyperResponse, Request, Server};
 use warp::{filters, Filter, Rejection};
 
-pub fn json_rpc(server: Server) -> impl Filter<Extract = (HyperResponse,)> {
+pub fn json_rpc(
+    server: Server,
+) -> impl Filter<Extract = (HyperResponse,), Error = Rejection> + Clone {
     filters::method::post()
         .and(warp::filters::header::exact(
             "Content-Type",
