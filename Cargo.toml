@@ -1,5 +1,5 @@
 [package]
-name = "rust-ddd-json-rpc"
+name = "warp-json-rpc"
 version = "0.1.0"
 authors = ["AtsukiTak <takatomgoo@gmail.com>"]
 edition = "2018"
