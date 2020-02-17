@@ -12,6 +12,7 @@ use std::borrow::Cow;
 #[derive(PartialEq, Debug, Serialize)]
 pub struct Response {
     pub jsonrpc: Version,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<u64>,
     #[serde(flatten)]
     pub content: ResponseContent,
@@ -161,5 +162,13 @@ mod test {
         };
 
         assert_eq!(deserialized, expected);
+    }
+
+    #[test]
+    fn serialize_no_id_response_shoud_not_contain_id_field() {
+        let res = Response::new(None, 42);
+        let res_str = serde_json::to_string(&res).unwrap();
+
+        assert!(!res_str.contains("id"));
     }
 }
