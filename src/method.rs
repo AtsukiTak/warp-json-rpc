@@ -126,3 +126,16 @@ array_method_fns! {
     T2,
     T1
 }
+
+pub trait MethodFactory<M> {
+    fn create(&self) -> M;
+}
+
+impl<F, M> MethodFactory<M> for F
+where
+    F: Fn() -> M,
+{
+    fn create(&self) -> M {
+        self()
+    }
+}
