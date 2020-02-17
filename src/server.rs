@@ -39,7 +39,7 @@ impl ServerBuilder {
         }
     }
 
-    pub fn register<F, M, P>(&mut self, name: &'static str, method: F) -> &mut Self
+    pub fn register<F, M, P>(mut self, name: &'static str, method: F) -> Self
     where
         F: MethodFactory<M> + 'static + Send + Sync,
         M: Method<P> + 'static + Send + Sync,
