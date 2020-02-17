@@ -1,3 +1,4 @@
+use futures::future;
 use warp::Filter as _;
 use warp_json_rpc::{array_method_fn, json_rpc, Error, Server};
 
@@ -7,11 +8,18 @@ async fn add(a: usize, b: usize) -> Result<usize, Error> {
 
 #[tokio::main]
 async fn main() {
-    let a = 42;
-    let add_method_factory = move || array_method_fn(move |b| add(a, b));
+    // Plain function method
+    let add_method_factory = || array_method_fn(add);
 
+    // Closure function method
+    let prefix = "Hello ";
+    let greet_method_factory =
+        move || array_method_fn(move |name: String| future::ok(format!("{}{}", prefix, name)));
+
+    // Create Json RPC server
     let server = Server::builder()
-        .register("add_42", add_method_factory)
+        .register("add", add_method_factory)
+        .register("greet", greet_method_factory)
         .build();
 
     let log = warp::filters::log::custom(|info| {

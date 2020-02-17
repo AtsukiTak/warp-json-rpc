@@ -19,3 +19,4 @@ warp = "~0.2"
 [dev-dependencies]
 quickcheck = "0.9"
 quickcheck_macros = "0.9"
+futures = "0.3"
