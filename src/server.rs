@@ -1,5 +1,5 @@
 use crate::{
-    method::Method,
+    method::{Method, MethodFactory},
     req::Request,
     res::{Error, Response},
 };
@@ -8,10 +8,29 @@ use serde_json::Value;
 use std::{collections::HashMap, future::Future, pin::Pin};
 
 pub struct Server {
-    methods: HashMap<&'static str, RequestHandler>,
+    methods: HashMap<&'static str, RequestHandlerFactory>,
+}
+
+impl Server {
+    pub fn new() -> Server {
+        Server {
+            methods: HashMap::new(),
+        }
+    }
+
+    pub fn register<F, M, P>(&mut self, name: &'static str, method: F)
+    where
+        F: MethodFactory<M> + 'static,
+        M: Method<P> + 'static,
+        P: DeserializeOwned,
+    {
+        self.methods
+            .insert(name, method_factory_to_handler_factory(method));
+    }
 }
 
 type RequestHandler = Box<dyn FnOnce(Request) -> Pin<Box<dyn Future<Output = Response>>>>;
+type RequestHandlerFactory = Box<dyn FnOnce() -> RequestHandler>;
 
 /// `Method` を Request -> Response のクロージャにラップする
 fn method_to_handler<M, P>(method: M) -> RequestHandler
@@ -48,4 +67,13 @@ where
     }
 
     Box::new(move |req| Box::pin(async { inner(method, req).await.unwrap_or_else(|e| e) }))
+}
+
+fn method_factory_to_handler_factory<F, M, P>(factory: F) -> RequestHandlerFactory
+where
+    F: MethodFactory<M> + 'static,
+    M: Method<P> + 'static,
+    P: DeserializeOwned,
+{
+    Box::new(move || method_to_handler(factory.create()))
 }
