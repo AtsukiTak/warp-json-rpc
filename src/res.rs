@@ -9,12 +9,12 @@ use std::borrow::Cow;
  * Response
  * ========
  */
-#[derive(Debug, Serialize)]
+#[derive(PartialEq, Debug, Serialize)]
 pub struct Response {
-    jsonrpc: Version,
-    id: Option<u64>,
+    pub jsonrpc: Version,
+    pub id: Option<u64>,
     #[serde(flatten)]
-    content: ResponseContent,
+    pub content: ResponseContent,
 }
 
 impl Response {
@@ -46,7 +46,7 @@ impl<'a> Into<HyperResponse<Body>> for &'a Response {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(PartialEq, Debug, Serialize)]
 pub enum ResponseContent {
     #[serde(rename = "result")]
     Success(Value),
@@ -54,7 +54,7 @@ pub enum ResponseContent {
     Error(Error),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(PartialEq, Debug, Serialize)]
 pub struct Error {
     pub code: i64,
     pub message: Cow<'static, str>,

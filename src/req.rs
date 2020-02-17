@@ -1,13 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{map::Map, Value};
-use warp::Filter as _;
 
 /*
  * =======
  * Request
  * =======
  */
-#[derive(Debug, Deserialize)]
+#[derive(PartialEq, Debug, Deserialize)]
 pub struct Request {
     pub jsonrpc: Version,
     pub id: Option<u64>,
@@ -15,13 +14,13 @@ pub struct Request {
     pub params: Option<Params>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Debug, Deserialize, Serialize)]
 pub enum Version {
     #[serde(rename = "2.0")]
     V2,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(PartialEq, Debug, Deserialize)]
 #[serde(untagged)]
 pub enum Params {
     ByPosition(Vec<Value>),
