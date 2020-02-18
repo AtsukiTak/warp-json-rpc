@@ -12,16 +12,19 @@ use warp_json_rpc::filters as json_rpc;
 use futures::future;
 use warp::Filter as _;
 
-let add_method = json_rpc::method("add")
+const RPC_ENDPOINT: &str = "rpc";
+
+let add_method = filters::path::path(RPC_ENDPOINT)
+  .json_rpc::method("add")
   .and(json_rpc::params::<(u8, u8)>())
   .and_then(|a, b| future::ok(a + b));
 
-let greet_method = json_rpc::method("greet")
+let greet_method = filters::path::path(RPC_ENDPOINT)
+  .json_rpc::method("greet")
   .and(json_rpc::params::<(String)>())
   .and_then(|name| future::ok(format!("Hello {}", name)))
 
-let filter = filters::path::::path("rpc")
-  .and(add_method.or(greet_method));
+let filter = add_method.or(greet_method);
 ```
 
 現在はこれができない。なぜなら、最初にBodyをパースした段階でBodyがextractされてしまい、次回以降のパース時に失敗するから。
