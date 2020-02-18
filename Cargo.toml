@@ -1,8 +1,13 @@
 [package]
 name = "warp-json-rpc"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["AtsukiTak <takatomgoo@gmail.com>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
+description = "JSON RPC server extension for warp"
+repository = "https://github.com/AtsukiTak/warp-json-rpc"
+keywords = ["json-rpc", "rpc", "warp"]
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
