@@ -1,19 +1,20 @@
 use crate::{
     store::{self, LazyReqStore},
-    Request,
+    Builder, Request,
 };
 use futures::future;
 use serde::Deserialize;
 use warp::{filters, reject, Filter, Rejection};
 
-/// Create a `Filter` that initialize JSON RPC handling.
-pub fn json_rpc() -> impl Filter<Extract = (), Error = Rejection> + Clone {
+/// Create a `Filter` that requires and initializes JSON RPC handling.
+pub fn json_rpc() -> impl Filter<Extract = (Builder,), Error = Rejection> + Clone {
     filters::method::post()
         .and(filters::header::exact("Content-Type", "application/json"))
         // Get and set `Request` if it is not stored already.
         .and(store::filled().or(store_req()))
         .map(|_| ())
         .untuple_one()
+        .and(store::stored_req().map(|req: Request| Builder::new(req.id)))
 }
 
 fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Clone {
