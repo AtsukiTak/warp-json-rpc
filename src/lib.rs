@@ -1,4 +1,4 @@
-pub mod filter;
+pub mod filters;
 pub mod req;
 pub mod res;
 pub mod service;
