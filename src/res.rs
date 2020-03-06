@@ -9,50 +9,61 @@ use std::borrow::Cow;
  * Response
  * ========
  */
-#[derive(PartialEq, Debug, Serialize)]
-pub struct Response {
-    pub jsonrpc: Version,
+#[derive(Serialize)]
+struct Response {
+    jsonrpc: Version,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<u64>,
+    id: Option<u64>,
     #[serde(flatten)]
-    pub content: ResponseContent,
+    content: ResponseContent,
 }
 
 impl Response {
-    pub fn new(id: Option<u64>, success: impl Serialize) -> Response {
+    fn new(id: Option<u64>, content: ResponseContent) -> Response {
         Response {
             jsonrpc: Version::V2,
             id,
-            content: ResponseContent::Success(serde_json::to_value(success).unwrap()),
+            content,
         }
     }
 
-    pub fn new_err(id: Option<u64>, error: Error) -> Response {
-        Response {
-            jsonrpc: Version::V2,
-            id,
-            content: ResponseContent::Error(error),
-        }
-    }
-}
-
-pub type HyperResponse = hyper::Response<Body>;
-
-impl<'a> Into<HyperResponse> for &'a Response {
-    fn into(self) -> HyperResponse {
-        let body = Body::from(serde_json::to_vec(self).unwrap());
-        hyper::Response::builder()
+    /// Currently `warp` does not expose `Reply` trait (it is guarded).
+    /// So we need to convert this into something that implements `Reply`.
+    fn into_reply(self) -> anyhow::Result<impl warp::Reply> {
+        let body = Body::from(serde_json::to_vec(&self)?);
+        Ok(http::Response::builder()
             .status(200)
             .header("Content-Type", "application/json")
             .body(body)
-            .unwrap()
+            .unwrap())
     }
 }
 
-#[derive(PartialEq, Debug, Serialize)]
-pub enum ResponseContent {
+pub struct Builder {
+    id: Option<u64>,
+}
+
+impl Builder {
+    pub(crate) fn new(id: Option<u64>) -> Builder {
+        Builder { id }
+    }
+
+    pub fn success<S>(self, content: S) -> anyhow::Result<impl warp::Reply>
+    where
+        S: Serialize + 'static,
+    {
+        Response::new(self.id, ResponseContent::Success(Box::new(content))).into_reply()
+    }
+
+    pub fn error(self, error: Error) -> anyhow::Result<impl warp::Reply> {
+        Response::new(self.id, ResponseContent::Error(error)).into_reply()
+    }
+}
+
+#[derive(Serialize)]
+enum ResponseContent {
     #[serde(rename = "result")]
-    Success(Value),
+    Success(Box<dyn erased_serde::Serialize>),
     #[serde(rename = "error")]
     Error(Error),
 }
@@ -121,7 +132,7 @@ mod test {
             id: usize,
         }
 
-        let res = Response::new(Some(42), "The answer");
+        let res = Response::new(Some(42), ResponseContent::Success(Box::new("The answer")));
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 
@@ -148,7 +159,7 @@ mod test {
             message: String,
         }
 
-        let res = Response::new_err(Some(42), Error::INVALID_PARAMS);
+        let res = Response::new(Some(42), ResponseContent::Error(Error::INVALID_PARAMS));
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 
@@ -166,7 +177,7 @@ mod test {
 
     #[test]
     fn serialize_no_id_response_shoud_not_contain_id_field() {
-        let res = Response::new(None, 42);
+        let res = Response::new(None, ResponseContent::Success(Box::new(42)));
         let res_str = serde_json::to_string(&res).unwrap();
 
         assert!(!res_str.contains("id"));

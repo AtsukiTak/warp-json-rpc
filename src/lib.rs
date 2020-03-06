@@ -1,11 +1,9 @@
-pub mod filter;
-pub mod method;
-pub mod req;
-pub mod res;
-pub mod server;
+pub mod filters;
+mod req;
+mod res;
+mod service;
+mod store;
 
-pub use filter::json_rpc;
-pub use method::{array_method_fn, map_method_fn, Method};
 pub use req::Request;
-pub use res::{Error, Response};
-pub use server::Server;
+pub use res::{Builder, Error};
+pub use service::service;
