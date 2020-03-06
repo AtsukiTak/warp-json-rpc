@@ -9,7 +9,7 @@ use std::borrow::Cow;
  * Response
  * ========
  */
-#[derive(PartialEq, Debug, Serialize)]
+#[derive(Serialize)]
 pub struct Response {
     jsonrpc: Version,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -50,12 +50,9 @@ impl Builder {
 
     pub fn success<S>(self, content: S) -> Response
     where
-        S: Serialize,
+        S: Serialize + 'static,
     {
-        Response::new(
-            self.id,
-            ResponseContent::Success(serde_json::to_value(content).unwrap()),
-        )
+        Response::new(self.id, ResponseContent::Success(Box::new(content)))
     }
 
     pub fn error(self, error: Error) -> Response {
@@ -63,10 +60,10 @@ impl Builder {
     }
 }
 
-#[derive(PartialEq, Debug, Serialize)]
+#[derive(Serialize)]
 pub enum ResponseContent {
     #[serde(rename = "result")]
-    Success(Value),
+    Success(Box<dyn erased_serde::Serialize>),
     #[serde(rename = "error")]
     Error(Error),
 }
