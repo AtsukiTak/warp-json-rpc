@@ -59,6 +59,6 @@ pub(crate) fn filled() -> impl Filter<Extract = (), Error = Rejection> + Copy {
 /// Create a `Filter` that extracts stored `Request`.
 pub(crate) fn stored_req() -> impl Filter<Extract = (Request,), Error = Rejection> + Copy {
     store().and_then(|store: LazyReqStore| {
-        future::ready(store.borrow().cloned().ok_or(reject::reject()))
+        future::ready(store.borrow().cloned().ok_or_else(reject::reject))
     })
 }

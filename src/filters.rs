@@ -22,7 +22,7 @@ fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Copy {
         .and(store::store())
         .map(|req: Request, store: LazyReqStore| {
             store
-                .fill(req.clone())
+                .fill(req)
                 .expect("LazyReqStore is filled more than twice");
         })
         .untuple_one()
