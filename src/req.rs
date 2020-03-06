@@ -39,7 +39,6 @@ impl Request {
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde_json::json;
 
     #[test]
     fn deserialize_by_name_request() {
@@ -53,7 +52,7 @@ mod test {
         assert_eq!(req.id, Some(42));
         assert_eq!(req.method, "op".to_string());
 
-        #[derive(PartialEq, Eq, Debug)]
+        #[derive(PartialEq, Eq, Debug, Deserialize)]
         struct Param {
             lhs: i32,
             rhs: i32,
