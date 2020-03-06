@@ -11,11 +11,11 @@ use std::borrow::Cow;
  */
 #[derive(PartialEq, Debug, Serialize)]
 pub struct Response {
-    pub jsonrpc: Version,
+    jsonrpc: Version,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<u64>,
+    id: Option<u64>,
     #[serde(flatten)]
-    pub content: ResponseContent,
+    content: ResponseContent,
 }
 
 impl Response {
@@ -34,14 +34,10 @@ impl Response {
             content: ResponseContent::Error(error),
         }
     }
-}
 
-pub type HyperResponse = hyper::Response<Body>;
-
-impl<'a> Into<HyperResponse> for &'a Response {
-    fn into(self) -> HyperResponse {
+    pub fn into_reply(&self) -> impl warp::Reply {
         let body = Body::from(serde_json::to_vec(self).unwrap());
-        hyper::Response::builder()
+        http::Response::builder()
             .status(200)
             .header("Content-Type", "application/json")
             .body(body)
