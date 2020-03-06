@@ -19,7 +19,7 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn new(id: Option<u64>, content: ResponseContent) -> Response {
+    fn new(id: Option<u64>, content: ResponseContent) -> Response {
         Response {
             jsonrpc: Version::V2,
             id,
@@ -61,7 +61,7 @@ impl Builder {
 }
 
 #[derive(Serialize)]
-pub enum ResponseContent {
+enum ResponseContent {
     #[serde(rename = "result")]
     Success(Box<dyn erased_serde::Serialize>),
     #[serde(rename = "error")]
