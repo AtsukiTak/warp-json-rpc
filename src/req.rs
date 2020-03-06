@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
+use std::sync::Arc;
 
 /*
  * =======
@@ -8,10 +9,16 @@ use serde_json::value::RawValue;
  */
 #[derive(Debug, Clone, Deserialize)]
 pub struct Request {
-    pub jsonrpc: Version,
-    pub id: Option<u64>,
-    pub method: String,
-    pub params: Option<Box<RawValue>>,
+    #[serde(flatten)]
+    inner: Arc<Inner>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Inner {
+    jsonrpc: Version,
+    id: Option<u64>,
+    method: String,
+    params: Option<Box<RawValue>>,
 }
 
 #[derive(PartialEq, Debug, Clone, Deserialize, Serialize)]
@@ -21,15 +28,19 @@ pub enum Version {
 }
 
 impl Request {
+    pub fn id(&self) -> Option<u64> {
+        self.inner.id
+    }
+
     pub fn method(&self) -> &str {
-        self.method.as_str()
+        self.inner.method.as_str()
     }
 
     pub fn deserialize_param<'de, T>(&'de self) -> Result<T, anyhow::Error>
     where
         T: Deserialize<'de>,
     {
-        match &self.params {
+        match &self.inner.params {
             Some(params) => Ok(serde_json::from_str(params.get())?),
             None => Err(anyhow::anyhow!("No parameter is presented")),
         }

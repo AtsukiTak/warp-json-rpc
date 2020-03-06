@@ -14,7 +14,7 @@ pub fn json_rpc() -> impl Filter<Extract = (Builder,), Error = Rejection> + Copy
         .and(store::filled().or(store_req()))
         .map(|_| ())
         .untuple_one()
-        .and(store::stored_req().map(|req: Request| Builder::new(req.id)))
+        .and(store::stored_req().map(|req: Request| Builder::new(req.id())))
 }
 
 fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Copy {
