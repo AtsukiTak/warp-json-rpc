@@ -36,6 +36,12 @@ impl Into<Value> for Params {
     }
 }
 
+impl Request {
+    pub fn method(&self) -> &str {
+        self.method.as_str()
+    }
+}
+
 /*
 pub fn request() -> impl warp::Filter<Extract = (Request,), Error = Rejection> {
     warp::filters::method::post()
