@@ -40,6 +40,26 @@ impl Request {
     pub fn method(&self) -> &str {
         self.method.as_str()
     }
+
+    pub fn params(&self) -> &Params {
+        &self.params
+    }
+}
+
+impl Params {
+    pub fn by_position(&self) -> bool {
+        match self {
+            Params::ByPosition(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn by_name(&self) -> bool {
+        match self {
+            Params::ByName(_) => true,
+            _ => false,
+        }
+    }
 }
 
 /*
