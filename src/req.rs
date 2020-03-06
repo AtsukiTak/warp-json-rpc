@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{map::Map, Value};
+use serde_json::value::RawValue;
 
 /*
  * =======
@@ -11,7 +11,7 @@ pub struct Request {
     pub jsonrpc: Version,
     pub id: Option<u64>,
     pub method: String,
-    pub params: Option<Params>,
+    pub params: Option<Box<RawValue>>,
 }
 
 #[derive(PartialEq, Debug, Deserialize, Serialize)]
@@ -20,45 +20,16 @@ pub enum Version {
     V2,
 }
 
-#[derive(PartialEq, Debug, Deserialize)]
-#[serde(untagged)]
-pub enum Params {
-    ByPosition(Vec<Value>),
-    ByName(Map<String, Value>),
-}
-
-impl Into<Value> for Params {
-    fn into(self) -> Value {
-        match self {
-            Params::ByPosition(inner) => Value::Array(inner),
-            Params::ByName(inner) => Value::Object(inner),
-        }
-    }
-}
-
 impl Request {
     pub fn method(&self) -> &str {
         self.method.as_str()
     }
 
-    pub fn params(&self) -> &Params {
-        &self.params
-    }
-}
-
-impl Params {
-    pub fn by_position(&self) -> bool {
-        match self {
-            Params::ByPosition(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn by_name(&self) -> bool {
-        match self {
-            Params::ByName(_) => true,
-            _ => false,
-        }
+    pub fn deserialize_param<'de, T>(&'de self) -> Result<T, serde::Error>
+    where
+        T: Deserialize<'de>,
+    {
+        serde_json::from_str(self.params.get())
     }
 }
 
@@ -90,16 +61,22 @@ mod test {
         assert_eq!(req.id, Some(42));
         assert_eq!(req.method, "op".to_string());
 
-        match req.params.unwrap() {
-            Params::ByName(map) => {
-                assert_eq!(map.get("lhs"), Some(&json!(24)));
-                assert_eq!(map.get("rhs"), Some(&json!(12)));
-                assert_eq!(map.get("op"), Some(&json!("+")));
-            }
-            Params::ByPosition(_) => {
-                panic!("Error: parameter should be ByName");
-            }
+        #[derive(PartialEq, Eq)]
+        struct Param {
+            lhs: i32,
+            rhs: i32,
+            op: String,
         }
+
+        let param = req.deserialize_param::<Param>().unwrap();
+        assert_eq!(
+            param,
+            Param {
+                lhs: 24,
+                rhs: 12,
+                op: "+".to_string()
+            }
+        );
     }
 
     #[test]
@@ -114,15 +91,9 @@ mod test {
         assert_eq!(req.id, Some(42));
         assert_eq!(req.method, "op".to_string());
 
-        match req.params.unwrap() {
-            Params::ByPosition(arr) => {
-                assert_eq!(arr[0], json!(24));
-                assert_eq!(arr[1], json!(12));
-                assert_eq!(arr[2], json!("+"));
-            }
-            Params::ByName(_) => {
-                panic!("Error: parameter should be ByPosition");
-            }
-        }
+        let (lhs, rhs, op) = req.deserialize_param::<(i32, i32, String)>().unwrap();
+        assert_eq!(lhs, 24);
+        assert_eq!(rhs, 12);
+        assert_eq!(op, "+".to_string());
     }
 }
