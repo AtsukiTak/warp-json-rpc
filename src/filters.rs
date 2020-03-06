@@ -7,7 +7,7 @@ use serde::Deserialize;
 use warp::{filters, reject, Filter, Rejection};
 
 /// Create a `Filter` that requires and initializes JSON RPC handling.
-pub fn json_rpc() -> impl Filter<Extract = (Builder,), Error = Rejection> + Clone {
+pub fn json_rpc() -> impl Filter<Extract = (Builder,), Error = Rejection> + Copy {
     filters::method::post()
         .and(filters::header::exact("Content-Type", "application/json"))
         // Get and set `Request` if it is not stored already.
@@ -17,7 +17,7 @@ pub fn json_rpc() -> impl Filter<Extract = (Builder,), Error = Rejection> + Clon
         .and(store::stored_req().map(|req: Request| Builder::new(req.id)))
 }
 
-fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Clone {
+fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Copy {
     filters::body::json::<Request>()
         .and(store::store())
         .map(|req: Request, store: LazyReqStore| {
@@ -29,7 +29,7 @@ fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Clone {
 }
 
 /// Create a `Filter` that requires the request RPC method to be given name.
-pub fn method(name: &'static str) -> impl Filter<Extract = (), Error = Rejection> + Clone {
+pub fn method(name: &'static str) -> impl Filter<Extract = (), Error = Rejection> + Copy {
     store::stored_req()
         .and_then(move |req: Request| {
             if req.method() == name {
@@ -42,7 +42,7 @@ pub fn method(name: &'static str) -> impl Filter<Extract = (), Error = Rejection
 }
 
 /// Create a `Filter` that extracts RPC parameter.
-pub fn params<T>() -> impl Filter<Extract = (T,), Error = Rejection> + Clone
+pub fn params<T>() -> impl Filter<Extract = (T,), Error = Rejection> + Copy
 where
     for<'de> T: Deserialize<'de> + Send,
 {

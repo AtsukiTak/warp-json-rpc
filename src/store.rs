@@ -30,7 +30,7 @@ impl LazyReqStore {
 }
 
 /// Create a `Filter` that extracts `LazyReqStore`.
-pub(crate) fn store() -> impl Filter<Extract = (LazyReqStore,), Error = Rejection> + Clone {
+pub(crate) fn store() -> impl Filter<Extract = (LazyReqStore,), Error = Rejection> + Copy {
     filters::ext::optional::<LazyReqStore>().and_then(|opt| {
         match opt {
             Some(store) => future::ok(store),
@@ -44,7 +44,7 @@ pub(crate) fn store() -> impl Filter<Extract = (LazyReqStore,), Error = Rejectio
 }
 
 /// Create a `Filter` that requires the `LazyReqStore` is already filled.
-pub(crate) fn filled() -> impl Filter<Extract = (), Error = Rejection> + Clone {
+pub(crate) fn filled() -> impl Filter<Extract = (), Error = Rejection> + Copy {
     store()
         .and_then(|store: LazyReqStore| {
             if store.filled() {
@@ -57,7 +57,7 @@ pub(crate) fn filled() -> impl Filter<Extract = (), Error = Rejection> + Clone {
 }
 
 /// Create a `Filter` that extracts stored `Request`.
-pub(crate) fn stored_req() -> impl Filter<Extract = (Request,), Error = Rejection> + Clone {
+pub(crate) fn stored_req() -> impl Filter<Extract = (Request,), Error = Rejection> + Copy {
     store().and_then(|store: LazyReqStore| {
         future::ready(store.borrow().cloned().ok_or(reject::reject()))
     })

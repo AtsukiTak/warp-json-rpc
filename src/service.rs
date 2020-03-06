@@ -11,6 +11,7 @@ use warp::{
     Filter, Rejection,
 };
 
+#[derive(Clone, Copy)]
 pub struct JsonRpcService<S> {
     service: S,
 }
@@ -51,9 +52,9 @@ pub fn service<F>(
     Response = Response,
     Error = Infallible,
     Future = impl Future<Output = Result<Response, Infallible>>,
->
+> + Copy
 where
-    F: Filter,
+    F: Filter + Copy,
     F::Future: TryFuture<Error = Rejection>,
     <F::Future as TryFuture>::Ok: Reply,
 {
