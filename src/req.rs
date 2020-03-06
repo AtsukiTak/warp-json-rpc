@@ -33,17 +33,6 @@ impl Request {
     }
 }
 
-/*
-pub fn request() -> impl warp::Filter<Extract = (Request,), Error = Rejection> {
-    warp::filters::method::post()
-        .and(warp::filters::header::exact(
-            "Content-Type",
-            "application/json",
-        ))
-        .and(warp::filters::body::json::<Request>())
-}
-*/
-
 #[cfg(test)]
 mod test {
     use super::*;
