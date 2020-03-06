@@ -10,7 +10,7 @@ use std::borrow::Cow;
  * ========
  */
 #[derive(Serialize)]
-pub struct Response {
+struct Response {
     jsonrpc: Version,
     #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<u64>,
@@ -29,7 +29,7 @@ impl Response {
 
     /// Currently `warp` does not expose `Reply` trait (it is guarded).
     /// So we need to convert this into something that implements `Reply`.
-    pub fn into_reply(&self) -> anyhow::Result<impl warp::Reply> {
+    fn into_reply(&self) -> anyhow::Result<impl warp::Reply> {
         let body = Body::from(serde_json::to_vec(self)?);
         Ok(http::Response::builder()
             .status(200)
@@ -48,15 +48,15 @@ impl Builder {
         Builder { id }
     }
 
-    pub fn success<S>(self, content: S) -> Response
+    pub fn success<S>(self, content: S) -> anyhow::Result<impl warp::Reply>
     where
         S: Serialize + 'static,
     {
-        Response::new(self.id, ResponseContent::Success(Box::new(content)))
+        Response::new(self.id, ResponseContent::Success(Box::new(content))).into_reply()
     }
 
-    pub fn error(self, error: Error) -> Response {
-        Response::new(self.id, ResponseContent::Error(error))
+    pub fn error(self, error: Error) -> anyhow::Result<impl warp::Reply> {
+        Response::new(self.id, ResponseContent::Error(error)).into_reply()
     }
 }
 
