@@ -1,4 +1,5 @@
 use crate::req::Request;
+use futures::future;
 use lazycell::AtomicLazyCell;
 use std::sync::Arc;
 use warp::{filters, reject, Filter, Rejection};
@@ -29,7 +30,7 @@ impl LazyReqStore {
 }
 
 /// Create a `Filter` that extracts `LazyReqStore`.
-pub(crate) fn store() -> impl Filter<Extract = (LazyReqStore,), Error = Rejection> {
+pub(crate) fn store() -> impl Filter<Extract = (LazyReqStore,), Error = Rejection> + Clone {
     filters::ext::optional::<LazyReqStore>().and_then(|opt| {
         match opt {
             Some(store) => future::ok(store),
@@ -38,22 +39,26 @@ pub(crate) fn store() -> impl Filter<Extract = (LazyReqStore,), Error = Rejectio
                 // TODO return custom error
                 future::err(reject::reject())
             }
-        };
-    })
-}
-
-/// Create a `Filter` that requires the `LazyReqStore` is already filled.
-pub(crate) fn filled() -> impl Filter<Extract = (), Error = Rejection> {
-    store().and_then(|store| {
-        if store.filled() {
-            future::ok(())
-        } else {
-            future::err(reject::reject())
         }
     })
 }
 
+/// Create a `Filter` that requires the `LazyReqStore` is already filled.
+pub(crate) fn filled() -> impl Filter<Extract = (), Error = Rejection> + Clone {
+    store()
+        .and_then(|store: LazyReqStore| {
+            if store.filled() {
+                future::ok(())
+            } else {
+                future::err(reject::reject())
+            }
+        })
+        .untuple_one()
+}
+
 /// Create a `Filter` that extracts stored `Request`.
-pub(crate) fn stored_req() -> impl Filter<Extract = (Request,), Error = Rejection> {
-    get_store().and_then(|store| future::ready(store.borrow().cloned().ok_or(reject::reject())))
+pub(crate) fn stored_req() -> impl Filter<Extract = (Request,), Error = Rejection> + Clone {
+    store().and_then(|store: LazyReqStore| {
+        future::ready(store.borrow().cloned().ok_or(reject::reject()))
+    })
 }

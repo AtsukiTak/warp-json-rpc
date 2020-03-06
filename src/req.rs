@@ -6,7 +6,7 @@ use serde_json::value::RawValue;
  * Request
  * =======
  */
-#[derive(PartialEq, Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Request {
     pub jsonrpc: Version,
     pub id: Option<u64>,
@@ -14,7 +14,7 @@ pub struct Request {
     pub params: Option<Box<RawValue>>,
 }
 
-#[derive(PartialEq, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Debug, Clone, Deserialize, Serialize)]
 pub enum Version {
     #[serde(rename = "2.0")]
     V2,
@@ -25,11 +25,14 @@ impl Request {
         self.method.as_str()
     }
 
-    pub fn deserialize_param<'de, T>(&'de self) -> Result<T, serde::Error>
+    pub fn deserialize_param<'de, T>(&'de self) -> Result<T, anyhow::Error>
     where
         T: Deserialize<'de>,
     {
-        serde_json::from_str(self.params.get())
+        match &self.params {
+            Some(params) => Ok(serde_json::from_str(params.get())?),
+            None => Err(anyhow::anyhow!("No parameter is presented")),
+        }
     }
 }
 
@@ -50,7 +53,7 @@ mod test {
         assert_eq!(req.id, Some(42));
         assert_eq!(req.method, "op".to_string());
 
-        #[derive(PartialEq, Eq)]
+        #[derive(PartialEq, Eq, Debug)]
         struct Param {
             lhs: i32,
             rhs: i32,
