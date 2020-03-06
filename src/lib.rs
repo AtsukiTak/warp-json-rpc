@@ -1,8 +1,9 @@
 pub mod filters;
-pub mod req;
-pub mod res;
-pub mod service;
-pub mod store;
+mod req;
+mod res;
+mod service;
+mod store;
 
 pub use req::Request;
 pub use res::{Error, Response};
+pub use service::service;
