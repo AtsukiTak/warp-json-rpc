@@ -1,7 +1,15 @@
 use crate::store::LazyReqStore;
-use core::task::{Context, Poll};
+use core::{
+    convert::Infallible,
+    task::{Context, Poll},
+};
+use futures::future::{Future, TryFuture};
 use http::Request;
 use hyper::{service::Service, Body};
+use warp::{
+    reply::{Reply, Response},
+    Filter, Rejection,
+};
 
 pub struct JsonRpcService<S> {
     service: S,
@@ -34,4 +42,20 @@ impl<S> JsonRpcService<S> {
     pub fn new(service: S) -> JsonRpcService<S> {
         JsonRpcService { service }
     }
+}
+
+pub fn service<F>(
+    filter: F,
+) -> impl Service<
+    Request<Body>,
+    Response = Response,
+    Error = Infallible,
+    Future = impl Future<Output = Result<Response, Infallible>>,
+>
+where
+    F: Filter,
+    F::Future: TryFuture<Error = Rejection>,
+    <F::Future as TryFuture>::Ok: Reply,
+{
+    JsonRpcService::new(warp::service(filter))
 }
