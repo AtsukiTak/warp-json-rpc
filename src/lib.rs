@@ -5,5 +5,5 @@ mod service;
 mod store;
 
 pub use req::Request;
-pub use res::{Error, Response};
+pub use res::{Builder, Error, Response};
 pub use service::service;

@@ -19,22 +19,16 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn new(id: Option<u64>, success: impl Serialize) -> Response {
+    pub fn new(id: Option<u64>, content: ResponseContent) -> Response {
         Response {
             jsonrpc: Version::V2,
             id,
-            content: ResponseContent::Success(serde_json::to_value(success).unwrap()),
+            content,
         }
     }
 
-    pub fn new_err(id: Option<u64>, error: Error) -> Response {
-        Response {
-            jsonrpc: Version::V2,
-            id,
-            content: ResponseContent::Error(error),
-        }
-    }
-
+    /// Currently `warp` does not expose `Reply` trait (it is guarded).
+    /// So we need to convert this into something that implements `Reply`.
     pub fn into_reply(&self) -> impl warp::Reply {
         let body = Body::from(serde_json::to_vec(self).unwrap());
         http::Response::builder()
@@ -42,6 +36,30 @@ impl Response {
             .header("Content-Type", "application/json")
             .body(body)
             .unwrap()
+    }
+}
+
+pub struct Builder {
+    id: Option<u64>,
+}
+
+impl Builder {
+    pub(crate) fn new(id: Option<u64>) -> Builder {
+        Builder { id }
+    }
+
+    pub fn success<S>(self, content: S) -> Response
+    where
+        S: Serialize,
+    {
+        Response::new(
+            self.id,
+            ResponseContent::Success(serde_json::to_value(content).unwrap()),
+        )
+    }
+
+    pub fn error(self, error: Error) -> Response {
+        Response::new(self.id, ResponseContent::Error(error))
     }
 }
 
