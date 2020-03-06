@@ -7,18 +7,16 @@ use std::sync::Arc;
  * Request
  * =======
  */
+/// Deserializing structs containing flattened RawValue always failes.
+/// https://github.com/serde-rs/json/issues/599
+///
+/// So currently we wraps `method` and `params` by `Arc` separately.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Request {
-    #[serde(flatten)]
-    inner: Arc<Inner>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Inner {
     jsonrpc: Version,
     id: Option<u64>,
-    method: String,
-    params: Option<Box<RawValue>>,
+    method: Arc<String>,
+    params: Arc<Option<Box<RawValue>>>,
 }
 
 #[derive(PartialEq, Debug, Clone, Deserialize, Serialize)]
@@ -29,18 +27,18 @@ pub enum Version {
 
 impl Request {
     pub fn id(&self) -> Option<u64> {
-        self.inner.id
+        self.id
     }
 
     pub fn method(&self) -> &str {
-        self.inner.method.as_str()
+        self.method.as_str()
     }
 
     pub fn deserialize_param<'de, T>(&'de self) -> Result<T, anyhow::Error>
     where
         T: Deserialize<'de>,
     {
-        match &self.inner.params {
+        match self.params.as_ref() {
             Some(params) => Ok(serde_json::from_str(params.get())?),
             None => Err(anyhow::anyhow!("No parameter is presented")),
         }
@@ -60,8 +58,8 @@ mod test {
             "id": 42
         }"#;
         let req = serde_json::from_str::<Request>(req_str).unwrap();
-        assert_eq!(req.id, Some(42));
-        assert_eq!(req.method, "op".to_string());
+        assert_eq!(req.id(), Some(42));
+        assert_eq!(req.method(), "op");
 
         #[derive(PartialEq, Eq, Debug, Deserialize)]
         struct Param {
@@ -90,8 +88,8 @@ mod test {
             "id": 42
         }"#;
         let req = serde_json::from_str::<Request>(req_str).unwrap();
-        assert_eq!(req.id, Some(42));
-        assert_eq!(req.method, "op".to_string());
+        assert_eq!(req.id(), Some(42));
+        assert_eq!(req.method(), "op");
 
         let (lhs, rhs, op) = req.deserialize_param::<(i32, i32, String)>().unwrap();
         assert_eq!(lhs, 24);
