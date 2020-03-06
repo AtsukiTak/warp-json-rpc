@@ -29,13 +29,13 @@ impl Response {
 
     /// Currently `warp` does not expose `Reply` trait (it is guarded).
     /// So we need to convert this into something that implements `Reply`.
-    pub fn into_reply(&self) -> impl warp::Reply {
-        let body = Body::from(serde_json::to_vec(self).unwrap());
-        http::Response::builder()
+    pub fn into_reply(&self) -> anyhow::Result<impl warp::Reply> {
+        let body = Body::from(serde_json::to_vec(self)?);
+        Ok(http::Response::builder()
             .status(200)
             .header("Content-Type", "application/json")
             .body(body)
-            .unwrap()
+            .unwrap())
     }
 }
 
