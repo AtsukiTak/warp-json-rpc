@@ -132,7 +132,7 @@ mod test {
             id: usize,
         }
 
-        let res = Response::new(Some(42), "The answer");
+        let res = Response::new(Some(42), ResponseContent::Success(Box::new("The answer")));
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 
@@ -159,7 +159,7 @@ mod test {
             message: String,
         }
 
-        let res = Response::new_err(Some(42), Error::INVALID_PARAMS);
+        let res = Response::new(Some(42), ResponseContent::Error(Error::INVALID_PARAMS));
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 
@@ -177,7 +177,7 @@ mod test {
 
     #[test]
     fn serialize_no_id_response_shoud_not_contain_id_field() {
-        let res = Response::new(None, 42);
+        let res = Response::new(None, ResponseContent::Success(Box::new(42)));
         let res_str = serde_json::to_string(&res).unwrap();
 
         assert!(!res_str.contains("id"));
