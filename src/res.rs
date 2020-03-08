@@ -115,15 +115,23 @@ impl Error {
         data: None,
     };
 
-    pub fn custom<S>(code: i64, message: S, data: Option<impl Serialize + 'static>) -> Error
+    pub fn custom<S>(code: i64, message: S) -> Error
     where
         Cow<'static, str>: From<S>,
     {
         Error {
             code,
             message: message.into(),
-            data: data.map(|s| Box::new(s) as Box<dyn erased_serde::Serialize>),
+            data: None,
         }
+    }
+
+    pub fn with_data<S>(mut self, data: S) -> Error
+    where
+        S: Serialize + 'static,
+    {
+        self.data = Some(Box::new(data) as Box<dyn erased_serde::Serialize>);
+        self
     }
 }
 
