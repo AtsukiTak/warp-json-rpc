@@ -115,10 +115,9 @@ impl Error {
         data: None,
     };
 
-    pub fn custom<S, Ser>(code: i64, message: S, data: Option<Ser>) -> Error
+    pub fn custom<S>(code: i64, message: S, data: Option<impl Serialize + 'static>) -> Error
     where
         Cow<'static, str>: From<S>,
-        Ser: Serialize + 'static,
     {
         Error {
             code,
