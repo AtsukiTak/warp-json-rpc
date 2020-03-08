@@ -58,6 +58,16 @@ impl Builder {
     pub fn error(self, error: Error) -> anyhow::Result<http::Response<Body>> {
         Response::new(self.id, ResponseContent::Error(error)).into_reply()
     }
+
+    pub fn result<S>(self, result: Result<S, Error>) -> anyhow::Result<http::Response<Body>>
+    where
+        S: Serialize + 'static,
+    {
+        match result {
+            Ok(success) => self.success(success),
+            Err(error) => self.error(error),
+        }
+    }
 }
 
 #[derive(Serialize)]
