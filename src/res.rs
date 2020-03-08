@@ -1,7 +1,6 @@
 use crate::req::Version;
 use hyper::Body;
 use serde::Serialize;
-use serde_json::Value;
 use std::borrow::Cow;
 
 /*
@@ -78,11 +77,11 @@ enum ResponseContent {
     Error(Error),
 }
 
-#[derive(PartialEq, Debug, Serialize)]
+#[derive(Serialize)]
 pub struct Error {
     pub code: i64,
     pub message: Cow<'static, str>,
-    pub data: Option<Value>,
+    pub data: Option<Box<dyn erased_serde::Serialize>>,
 }
 
 impl Error {
@@ -116,14 +115,15 @@ impl Error {
         data: None,
     };
 
-    pub fn custom<S>(code: i64, message: S, data: Option<impl Serialize>) -> Error
+    pub fn custom<S, Ser>(code: i64, message: S, data: Option<Ser>) -> Error
     where
         Cow<'static, str>: From<S>,
+        Ser: Serialize + 'static,
     {
         Error {
             code,
             message: message.into(),
-            data: data.map(|s| serde_json::to_value(s).unwrap()),
+            data: data.map(|s| Box::new(s) as Box<dyn erased_serde::Serialize>),
         }
     }
 }
