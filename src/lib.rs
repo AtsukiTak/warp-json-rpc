@@ -1,9 +1,10 @@
 //! # Usage
 //!
-//! ```rust
-//! use warp_json_rpc::filters as json_rpc;
+//! ```no_run
+//! use warp_json_rpc::{filters as json_rpc, Builder};
 //! use futures::future;
 //! use warp::Filter as _;
+//! use std::convert::Infallible;
 //!
 //! #[tokio::main]
 //! async fn main() {
