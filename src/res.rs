@@ -29,7 +29,7 @@ impl Response {
 
     /// Currently `warp` does not expose `Reply` trait (it is guarded).
     /// So we need to convert this into something that implements `Reply`.
-    fn into_reply(self) -> anyhow::Result<impl warp::Reply> {
+    fn into_reply(self) -> anyhow::Result<http::Response<Body>> {
         let body = Body::from(serde_json::to_vec(&self)?);
         Ok(http::Response::builder()
             .status(200)
@@ -48,14 +48,14 @@ impl Builder {
         Builder { id }
     }
 
-    pub fn success<S>(self, content: S) -> anyhow::Result<impl warp::Reply>
+    pub fn success<S>(self, content: S) -> anyhow::Result<http::Response<Body>>
     where
         S: Serialize + 'static,
     {
         Response::new(self.id, ResponseContent::Success(Box::new(content))).into_reply()
     }
 
-    pub fn error(self, error: Error) -> anyhow::Result<impl warp::Reply> {
+    pub fn error(self, error: Error) -> anyhow::Result<http::Response<Body>> {
         Response::new(self.id, ResponseContent::Error(error)).into_reply()
     }
 }
