@@ -21,7 +21,9 @@
 //!   // ## Point 2
 //!   // You **MUST** wraps root `Filter` by `warp_json_rpc::service` function.
 //!   let svc = warp_json_rpc::service(route);
-//!   let make_svc = hyper::service::make_service_fn(move |_| future::ok::<_, Infallible>(svc));   
+//!   let make_svc = hyper::service::make_service_fn(move |_| {
+//!     future::ok::<_, Infallible>(svc.clone())
+//!   });
 //!   hyper::Server::bind(&([127, 0, 0, 1], 3030).into())
 //!     .serve(make_svc)
 //!     .await

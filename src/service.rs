@@ -52,9 +52,9 @@ pub fn service<F>(
     Response = Response,
     Error = Infallible,
     Future = impl Future<Output = Result<Response, Infallible>>,
-> + Copy
+> + Clone
 where
-    F: Filter + Copy,
+    F: Filter + Clone,
     F::Future: TryFuture<Error = Rejection>,
     <F::Future as TryFuture>::Ok: Reply,
 {
