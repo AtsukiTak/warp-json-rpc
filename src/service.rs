@@ -45,6 +45,11 @@ impl<S> JsonRpcService<S> {
     }
 }
 
+/// Convert a `Filter` into a `Service`.
+///
+/// # Note
+///
+/// You **MUST** call this method to use filters in this crate.
 pub fn service<F>(
     filter: F,
 ) -> impl Service<
