@@ -7,10 +7,11 @@ use std::sync::Arc;
  * Request
  * =======
  */
-/// Deserializing structs containing flattened RawValue always failes.
-/// https://github.com/serde-rs/json/issues/599
-///
-/// So currently we wraps `method` and `params` by `Arc` separately.
+/// Represents each JSON RPC request.
+// Deserializing structs containing flattened RawValue always failes.
+// https://github.com/serde-rs/json/issues/599
+//
+// So currently we wraps `method` and `params` by `Arc` separately.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Request {
     jsonrpc: Version,

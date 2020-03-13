@@ -6,7 +6,20 @@ use futures::future;
 use serde::Deserialize;
 use warp::{filters, reject, Filter, Rejection};
 
-/// Create a `Filter` that requires and initializes JSON RPC handling.
+/// Create a [`Filter`] that requires and initializes JSON RPC handling.
+///
+/// Note that you **MUST** call this [`Filter`] before [`method`] or [`params`] method.
+///
+/// [`Filter`]: https://docs.rs/warp/0.2.2/warp/trait.Filter.html
+/// [`method`]: ./fn.method.html
+/// [`params`]: ./fn.params.html
+///
+/// ```
+/// # use warp_json_rpc::filters::*;
+/// # use warp::Filter as _;
+///
+/// let rpc = json_rpc().and(method("greet")).and(params::<(String,)>());
+/// ```
 pub fn json_rpc() -> impl Filter<Extract = (Builder,), Error = Rejection> + Copy {
     filters::method::post()
         .and(filters::header::exact("Content-Type", "application/json"))
@@ -29,6 +42,17 @@ fn store_req() -> impl Filter<Extract = (), Error = Rejection> + Copy {
 }
 
 /// Create a `Filter` that requires the request RPC method to be given name.
+///
+/// Note that you **MUST** call [`json_rpc`] filter first.
+///
+/// [`json_rpc`]: ./fn.json_rpc.html
+///
+/// ```
+/// # use warp_json_rpc::filters::*;
+/// # use warp::Filter as _;
+///
+/// let rpc = json_rpc().and(method("greet"));
+/// ```
 pub fn method(name: &'static str) -> impl Filter<Extract = (), Error = Rejection> + Copy {
     store::stored_req()
         .and_then(move |req: Request| {
@@ -43,6 +67,17 @@ pub fn method(name: &'static str) -> impl Filter<Extract = (), Error = Rejection
 }
 
 /// Create a `Filter` that extracts RPC parameter.
+///
+/// Note that you **MUST** call [`json_rpc`] filter first.
+///
+/// [`json_rpc`]: ./fn.json_rpc.html
+///
+/// ```
+/// # use warp_json_rpc::filters::*;
+/// # use warp::Filter as _;
+///
+/// let rpc = json_rpc().and(method("greet")).and(params::<(String,)>());
+/// ```
 pub fn params<T>() -> impl Filter<Extract = (T,), Error = Rejection> + Copy
 where
     for<'de> T: Deserialize<'de> + Send,
