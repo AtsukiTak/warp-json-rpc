@@ -33,6 +33,7 @@ pub fn method(name: &'static str) -> impl Filter<Extract = (), Error = Rejection
     store::stored_req()
         .and_then(move |req: Request| {
             if req.method() == name {
+                log::info!(target: "warp_json_rpc", "match method \"{}\"", name);
                 future::ok(())
             } else {
                 future::err(reject::reject())
