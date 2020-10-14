@@ -8,14 +8,14 @@ use std::sync::Arc;
  * =======
  */
 /// Represents each JSON RPC request.
-// Deserializing structs containing flattened RawValue always failes.
+// Deserializing structs containing flattened RawValue always fails.
 // https://github.com/serde-rs/json/issues/599
 //
-// So currently we wraps `method` and `params` by `Arc` separately.
+// So currently we wrap `method` and `params` by `Arc` separately.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Request {
     jsonrpc: Version,
-    id: Option<u64>,
+    id: Id,
     method: Arc<String>,
     params: Arc<Option<Box<RawValue>>>,
 }
@@ -26,9 +26,17 @@ pub enum Version {
     V2,
 }
 
+#[derive(PartialEq, Eq, Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Id {
+    String(String),
+    Number(i64),
+    Null,
+}
+
 impl Request {
-    pub fn id(&self) -> Option<u64> {
-        self.id
+    pub fn id(&self) -> Id {
+        self.id.clone()
     }
 
     pub fn method(&self) -> &str {
@@ -59,7 +67,7 @@ mod test {
             "id": 42
         }"#;
         let req = serde_json::from_str::<Request>(req_str).unwrap();
-        assert_eq!(req.id(), Some(42));
+        assert_eq!(req.id(), Id::Number(42));
         assert_eq!(req.method(), "op");
 
         #[derive(PartialEq, Eq, Debug, Deserialize)]
@@ -89,12 +97,64 @@ mod test {
             "id": 42
         }"#;
         let req = serde_json::from_str::<Request>(req_str).unwrap();
-        assert_eq!(req.id(), Some(42));
+        assert_eq!(req.id(), Id::Number(42));
         assert_eq!(req.method(), "op");
 
         let (lhs, rhs, op) = req.deserialize_param::<(i32, i32, String)>().unwrap();
         assert_eq!(lhs, 24);
         assert_eq!(rhs, 12);
         assert_eq!(op, "+".to_string());
+    }
+
+    #[test]
+    fn deserialize_string_id() {
+        let req_str = r#"{
+            "jsonrpc": "2.0",
+            "method": "op",
+            "id": "string identifier"
+        }"#;
+        let req = serde_json::from_str::<Request>(req_str).unwrap();
+        assert_eq!(req.id(), Id::String("string identifier".to_string()));
+    }
+
+    #[test]
+    fn deserialize_number_id() {
+        let req_str = r#"{
+            "jsonrpc": "2.0",
+            "method": "op",
+            "id": -1234
+        }"#;
+        let req = serde_json::from_str::<Request>(req_str).unwrap();
+        assert_eq!(req.id(), Id::Number(-1234));
+    }
+
+    #[test]
+    fn deserialize_null_id() {
+        let req_str = r#"{
+            "jsonrpc": "2.0",
+            "method": "op",
+            "id": null
+        }"#;
+        let req = serde_json::from_str::<Request>(req_str).unwrap();
+        assert_eq!(req.id(), Id::Null);
+    }
+
+    #[test]
+    fn deserialize_no_id_should_fail() {
+        let req_str = r#"{
+            "jsonrpc": "2.0",
+            "method": "op"
+        }"#;
+        assert!(serde_json::from_str::<Request>(req_str).is_err());
+    }
+
+    #[test]
+    fn deserialize_bad_id() {
+        let req_str = r#"{
+            "jsonrpc": "2.0",
+            "method": "op",
+            "id": 1.0
+        }"#;
+        assert!(serde_json::from_str::<Request>(req_str).is_err());
     }
 }
