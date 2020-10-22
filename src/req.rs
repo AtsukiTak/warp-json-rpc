@@ -29,9 +29,27 @@ pub enum Version {
 #[derive(PartialEq, Eq, Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Id {
-    String(String),
+    String(Arc<String>),
     Number(i64),
     Null,
+}
+
+impl From<&str> for Id {
+    fn from(id: &str) -> Self {
+        Id::String(Arc::new(id.to_string()))
+    }
+}
+
+impl From<String> for Id {
+    fn from(id: String) -> Self {
+        Id::String(Arc::new(id))
+    }
+}
+
+impl From<i64> for Id {
+    fn from(id: i64) -> Self {
+        Id::Number(id)
+    }
 }
 
 impl Request {
@@ -114,7 +132,8 @@ mod test {
             "id": "string identifier"
         }"#;
         let req = serde_json::from_str::<Request>(req_str).unwrap();
-        assert_eq!(req.id(), Id::String("string identifier".to_string()));
+        assert_eq!(req.id(), Id::from("string identifier"));
+        assert_eq!(req.id(), Id::from(String::from("string identifier")));
     }
 
     #[test]
@@ -125,7 +144,7 @@ mod test {
             "id": -1234
         }"#;
         let req = serde_json::from_str::<Request>(req_str).unwrap();
-        assert_eq!(req.id(), Id::Number(-1234));
+        assert_eq!(req.id(), Id::from(-1234));
     }
 
     #[test]
