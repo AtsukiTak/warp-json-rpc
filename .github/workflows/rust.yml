@@ -1,0 +1,38 @@
+name: Rust
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Cache cargo registry
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('backend/Cargo.lock') }}
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('backend/Cargo.lock') }}
+    - name: Cache cargo check
+      uses: actions/cache@v1
+      with:
+        path: backend/target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('backend/Cargo.lock') }}
+    - name: Check
+      run: cargo check
+    - name: Check lint
+      run: cargo-clippy --all -- -D warnings
+    - name: Check format
+      run: cargo fmt -- --check
+    - name: Test
+      run: cargo test --all
