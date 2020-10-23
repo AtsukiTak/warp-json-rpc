@@ -1,4 +1,4 @@
-use crate::req::Version;
+use crate::req::{Id, Version};
 use hyper::Body;
 use serde::Serialize;
 use std::borrow::Cow;
@@ -11,14 +11,13 @@ use std::borrow::Cow;
 #[derive(Serialize)]
 struct Response {
     jsonrpc: Version,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    id: Option<u64>,
+    id: Id,
     #[serde(flatten)]
     content: ResponseContent,
 }
 
 impl Response {
-    fn new(id: Option<u64>, content: ResponseContent) -> Response {
+    fn new(id: Id, content: ResponseContent) -> Response {
         Response {
             jsonrpc: Version::V2,
             id,
@@ -39,11 +38,11 @@ impl Response {
 }
 
 pub struct Builder {
-    id: Option<u64>,
+    id: Id,
 }
 
 impl Builder {
-    pub(crate) fn new(id: Option<u64>) -> Builder {
+    pub(crate) fn new(id: Id) -> Builder {
         Builder { id }
     }
 
@@ -146,17 +145,20 @@ mod test {
         struct Expected {
             jsonrpc: String,
             result: String,
-            id: usize,
+            id: Id,
         }
 
-        let res = Response::new(Some(42), ResponseContent::Success(Box::new("The answer")));
+        let res = Response::new(
+            Id::Number(42),
+            ResponseContent::Success(Box::new("The answer")),
+        );
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 
         let expected = Expected {
             jsonrpc: "2.0".to_string(),
             result: "The answer".to_string(),
-            id: 42,
+            id: Id::Number(42),
         };
 
         assert_eq!(deserialized, expected);
@@ -168,7 +170,7 @@ mod test {
         struct Expected {
             jsonrpc: String,
             error: ExpectedError,
-            id: usize,
+            id: Id,
         }
         #[derive(Deserialize, PartialEq, Eq, Debug)]
         struct ExpectedError {
@@ -176,7 +178,7 @@ mod test {
             message: String,
         }
 
-        let res = Response::new(Some(42), ResponseContent::Error(Error::INVALID_PARAMS));
+        let res = Response::new(Id::Null, ResponseContent::Error(Error::INVALID_PARAMS));
         let res_str = serde_json::to_string(&res).unwrap();
         let deserialized = serde_json::from_str::<Expected>(res_str.as_str()).unwrap();
 
@@ -186,17 +188,9 @@ mod test {
                 code: -32602,
                 message: "Invalid params".to_string(),
             },
-            id: 42,
+            id: Id::Null,
         };
 
         assert_eq!(deserialized, expected);
-    }
-
-    #[test]
-    fn serialize_no_id_response_shoud_not_contain_id_field() {
-        let res = Response::new(None, ResponseContent::Success(Box::new(42)));
-        let res_str = serde_json::to_string(&res).unwrap();
-
-        assert!(!res_str.contains("id"));
     }
 }
