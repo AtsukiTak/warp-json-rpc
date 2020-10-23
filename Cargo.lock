@@ -1097,7 +1097,7 @@ dependencies = [
 
 [[package]]
 name = "warp-json-rpc"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "anyhow 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "erased-serde 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
