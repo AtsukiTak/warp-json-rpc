@@ -9,19 +9,17 @@ repository = "https://github.com/AtsukiTak/warp-json-rpc"
 keywords = ["json-rpc", "rpc", "warp"]
 readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 anyhow = "1.0"
 erased-serde = "0.3"
 futures = "0.3"
 http = "0.2"
-hyper = "~0.13"
-lazycell = "1.2"
-log = "~0.4"
+hyper = "0.14"
+lazycell = "1.3"
+log = "0.4"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = { version = "1.0", features = ["raw_value"] }
-warp = "~0.2"
+warp = "0.3"
 
 [dev-dependencies]
-tokio = { version = "~0.2", features = ["macros"] }
+tokio = { version = "1.1", features = ["macros", "rt-multi-thread"] }
